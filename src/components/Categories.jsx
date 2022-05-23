@@ -8,7 +8,9 @@ function Categories(props) {
         <div className="categories">
             <ul>
                 {categories.map((el, i) => (
-                    <li key={i} onClick={() => setActiveIndex(i)} className={activeIndex === i ? 'active' : ''}>{el}</li>
+                    <li onClick={() => setActiveIndex(i)}
+                        className={activeIndex === i ? 'active' : ''}
+                        key={i}>{el}</li>
                 ))}
             </ul>
         </div>
