@@ -1,7 +1,8 @@
 import logoSvg from '../assets/img/pizza-logo.svg';
 import {Link} from "react-router-dom";
+import Seacrh from "./Seacrh";
 
-function Header(props) {
+function Header() {
     return (
         <div className="header">
             <div className="container">
@@ -14,6 +15,7 @@ function Header(props) {
                         </div>
                     </div>
                 </Link>
+                <Seacrh/>
                 <div className="header__cart">
                     <Link to="/cart.html" className="button button--cart">
                         <span>520 ₽</span>
