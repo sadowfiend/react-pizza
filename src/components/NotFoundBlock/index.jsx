@@ -3,7 +3,6 @@ import React from 'react';
 import styles from './index.module.scss'
 
 function NotFoundBlock(props) {
-    console.log(styles)
     return (
         <div className={styles.root}>
             <h1>
