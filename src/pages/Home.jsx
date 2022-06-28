@@ -1,7 +1,12 @@
-import React from 'react';
-import {useSelector, useDispatch} from "react-redux";
+import React, {useRef} from 'react';
+import axios from "axios";
+import qs from 'qs'
+import {useNavigate} from 'react-router-dom';
+import {sortList} from "../components/Sort";
 
-import { setCategotyId } from "../redux/slices/filterSclice";
+import {useSelector, useDispatch} from "react-redux";
+import {setCategotyId, setCurrentPage, setFilters} from "../redux/slices/filterSclice";
+
 import Categories from "../components/Categories";
 import Sort from "../components/Sort";
 import Skeleton from "../components/PizzaBlock/Skeleton";
@@ -11,15 +16,21 @@ import Pagination from "../components/Pagination";
 import {SearchContext} from "../App";
 
 function Home() {
+    const navigate = useNavigate();
     const dispatch = useDispatch();
-    const {categoryId, sort} = useSelector(state => state.filter);
+    const isSearch = useRef(false);
+    const isMounted = useRef(false);
+    const {categoryId, sort, currentPage} = useSelector(state => state.filter);
 
     const [items, setItems] = React.useState([])
     const [isLoading, setIsLoading] = React.useState(true)
-    const [currentPage, setCurrentPage] = React.useState(1);
-    
+
     const onChangeCategory = (id) => {
         dispatch(setCategotyId(id))
+    }
+
+    const onChangePage = (number) => {
+      dispatch(setCurrentPage(number))
     }
 
 
@@ -35,8 +46,7 @@ function Home() {
         .map((obj) => <PizzaBlock key={obj.id} {...obj}/>);
     const skeletons = [...new Array(6)].map((_, index) => <Skeleton key={index}/>);
 
-
-    React.useEffect(() => {
+    const fetchPizzas = () => {
         setIsLoading(true)
 
         const sortBy = sort.sortProperty.replace('-', '');
@@ -44,15 +54,50 @@ function Home() {
         const category = categoryId > 0 ? `category=${categoryId}` : '';
         const search = searchValue ? `&search=${searchValue}` : '';
 
-        fetch(`https://628bab00667aea3a3e344015.mockapi.io/items?page=${currentPage}&limit=4&${category}&sortBy=${sortBy}&order=${order}${search}`
-        )
-            .then((res) => res.json())
-            .then((data) => {
-                setItems(data)
+        axios.get(`https://628bab00667aea3a3e344015.mockapi.io/items?page=${currentPage}&limit=4&${category}&sortBy=${sortBy}&order=${order}${search}`)
+            .then((res) => {
+                setItems(res.data)
                 setIsLoading(false)
             })
-        window.scrollTo(0,0);
+
+    }
+    // Если был первый рендер, то проверяем URL-параметры и сохраняем в редаксе
+    React.useEffect(()=> {
+        if (window.location.search) {
+            const params = qs.parse(window.location.search.substring(1))
+            const sort = sortList.find((obj) => obj.sortProperty === params.sortProperty)
+            dispatch(
+                setFilters({
+                    ...params,
+                    sort
+                })
+            )
+            isSearch.current = true
+        }
+    },[])
+
+    React.useEffect(() => {
+        window.scrollTo(0, 0);
+
+        if (!isSearch.current) {
+            fetchPizzas()
+        }
+
+        isSearch.current = false
     }, [categoryId, sort.sortProperty, searchValue, currentPage])
+
+    React.useEffect(()=>{
+        if (isMounted.current) {
+            const queryString = qs.stringify({
+                sortProperty: sort.sortProperty,
+                categoryId,
+                currentPage
+            })
+            navigate(`?${queryString}`)
+        }
+
+        isMounted.current = true
+    },[categoryId, sort.sortProperty, currentPage])
 
     return (
         <div className="container">
@@ -69,7 +114,7 @@ function Home() {
                     : pizzas
                 }
             </div>
-            <Pagination onChangePage={(number) => setCurrentPage(number)}/>
+            <Pagination currentPage={currentPage} onChangePage={onChangePage}/>
         </div>
     );
 }
